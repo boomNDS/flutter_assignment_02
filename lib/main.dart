@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import './ui/home.dart';
 import './ui/add_todo.dart';
+import './ui/todo_screen.dart';
 
 void main() => runApp(MyApp());
 
@@ -15,10 +16,11 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       // home: MyHomePage(),
-      initialRoute: "/",
+      initialRoute: "/todo",
       routes: {
         "/": (context) => Home(),
         "/add": (context) => Add(),
+        "/todo": (context) => TodoScreen()
       },
     );
   }
