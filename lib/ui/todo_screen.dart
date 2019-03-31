@@ -24,7 +24,7 @@ class TodoScreen extends StatelessWidget{
               data.title = "test";
               data.done = false;
               Todo result = await todo.insert(data);
-              print(result);
+              print(result.title);
             },
           ),
           RaisedButton(
@@ -42,9 +42,20 @@ class TodoScreen extends StatelessWidget{
           RaisedButton(
             child: Text("get"),
             onPressed: () async{
-              Todo data = await todo.getTodo(1);
+              Todo data = await todo.getTodo(2);
               print("**************************");
               print(data.toMap());
+              print("**************************");
+            },
+          ),
+          RaisedButton(
+            child: Text("getALl"),
+            onPressed: () async{
+              print("go");
+              List<Todo> data = await todo.getAllTodo();
+              print("**************************");
+              // print(data);
+              data.forEach((x) => print(x.id));
               print("**************************");
             },
           ),

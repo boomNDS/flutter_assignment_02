@@ -72,6 +72,16 @@ class TodoProvider{
     return null;
   }
 
+    getAllTodo() async{
+    List<Map<String, dynamic>> map = await db.query(tableTodo);
+    // print(map);
+    // print("==========");
+    // map.map((c) => new Todo.formMap(c));
+    // map.forEach((i) => print(i["_id"]));
+    // print("==========");
+    return map.map((c) => new Todo.formMap(c)).toList();;
+  }
+
   Future<int> update(Todo todo) async{
     return await db.update(tableTodo, todo.toMap(),
     where: "$columnId = ?",
