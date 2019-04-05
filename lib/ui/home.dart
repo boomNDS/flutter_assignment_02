@@ -1,18 +1,49 @@
 import 'package:flutter/material.dart';
 import 'todo.dart';
-import 'dart:async';
-import 'dart:convert';
 
-class Home extends StatelessWidget {
-  String nametitle = "Todo";
+TodoProvider todo = TodoProvider();
+
+class Home extends StatefulWidget {
   @override
-  TodoProvider todo = TodoProvider();
+  State<StatefulWidget> createState() {
+    // TODO: implement createState
+    return _HomeState();
+  }
+}
+
+class _HomeState extends State<Home> {
+  int _currentIndex = 0;
+  String nametitle = "Todo";
+  List<Todo> list_undone = [];
+  List<Todo> list_done = [];
+  int lenall = 0;
+
+  @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    todo.open("todo.db");
-    var list_view = new FutureBuilder(
-      future: _getData(),
-      builder: (BuildContext context, AsyncSnapshot snapshot) {
+    final List<Widget> listbtn = [
+      IconButton(
+        icon: Icon(Icons.add),
+        onPressed: () {
+          print("Pressed +");
+          Navigator.pushNamed(context, "/add");
+        },
+      ),
+      IconButton(
+        icon: Icon(Icons.delete),
+        onPressed: () {
+          print("Del -");
+          for (var item in list_done) {
+            todo.delete(item.id);
+          }
+          setState(() {
+            list_done = [];
+          });
+        },
+      ),
+    ];
+    var list_view = new FutureBuilder<List<Todo>>(
+      future: todo.getAllTodo(),
+      builder: (BuildContext context, AsyncSnapshot<List<Todo>> snapshot) {
         switch (snapshot.connectionState) {
           case ConnectionState.none:
             break;
@@ -23,163 +54,117 @@ class Home extends StatelessWidget {
             break;
           default:
             if (snapshot.hasError) {
-              return new Text('Error: ${snapshot.error}');
+              // return new Text('Error: ${snapshot.error}');
+              return new Center(
+                child: Text("No data found..."),
+              );
             } else {
-              return new Text('Result: ${todo.getAllTodo()}');
-              // return createListView(context, snapshot);
+              // return new Text('Result: ${snapshot.data[0].title}');
+              return createListView(context, snapshot);
             }
         }
       },
     );
-    return DefaultTabController(
-        length: 2,
-        child: Scaffold(
-          appBar: AppBar(title: Text("$nametitle"), actions: <Widget>[
-            // action button
-            IconButton(
-              icon: Icon(Icons.add),
-              onPressed: () {
-                print("Pressed +");
-                Navigator.pushNamed(context, "/add");
-              },
-            ),
-          ]),
-          bottomNavigationBar: Material(
-              color: Colors.indigo,
-              child: TabBar(
-                tabs: <Widget>[
-                  Tab(
-                    icon: Icon(Icons.list),
-                    text: "Task",
-                  ),
-                  Tab(icon: Icon(Icons.done_all), text: "Completed"),
-                ],
-              )),
-          body: TabBarView(
-            children: <Widget>[
-              Center(child: list_view),
-              Center(
-                child: Column(
-                  children: <Widget>[
-                    RaisedButton(
-                      child: Text("openn DB"),
-                      onPressed: () {
-                        todo.open("todo.db");
-                      },
-                    ),
-                    RaisedButton(
-                      child: Text("insert"),
-                      onPressed: () async {
-                        Todo data = Todo();
-                        data.title = "test";
-                        data.done = false;
-                        Todo result = await todo.insert(data);
-                        print(result.title);
-                      },
-                    ),
-                    RaisedButton(
-                      child: Text("update"),
-                      onPressed: () async {
-                        Todo newData = Todo();
-                        newData.id = 1;
-                        newData.title = "new Test";
-                        newData.done = true;
-
-                        int result = await todo.update(newData);
-                        print(result);
-                      },
-                    ),
-                    RaisedButton(
-                      child: Text("get"),
-                      onPressed: () async {
-                        Todo data = await todo.getTodo(2);
-                        print("**************************");
-                        print(data.toMap());
-                        print("**************************");
-                      },
-                    ),
-                    RaisedButton(
-                      child: Text("getALl"),
-                      onPressed: () async {
-                        List<Todo> data = await todo.getAllTodo();
-                        print("**************************");
-                        // print(data);
-                        data.forEach((x) => print(x.id));
-                        print("**************************");
-                      },
-                    ),
-                    RaisedButton(
-                      child: Text("delete"),
-                      onPressed: () async {
-                        int result = await todo.delete(1);
-                        print(result);
-                      },
-                    ),
-                    RaisedButton(
-                      child: Text("close db"),
-                      onPressed: () {
-                        todo.close();
-                      },
-                    )
-                  ],
-                ),
-              )
-            ],
+    final List<Widget> _children = [
+      Center(
+        child: list_view,
+      ),
+      Center(
+        child: list_view,
+      )
+    ];
+    return Scaffold(
+      appBar: AppBar(
+          title: Text("$nametitle"), actions: <Widget>[listbtn[_currentIndex]]),
+      body: _children[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        onTap: onTabTapped, // new
+        currentIndex: _currentIndex, // new
+        items: [
+          BottomNavigationBarItem(
+            icon: new Icon(Icons.list),
+            title: new Text('Task'),
           ),
-        ));
-  }
-
-  Widget createListView(BuildContext context, AsyncSnapshot snapshot) {
-    List<String> values = snapshot.data;
-    bool a = false;
-    return new ListView.builder(
-      itemCount: values.length,
-      itemBuilder: (BuildContext context, int index) {
-        return new Column(
-          children: <Widget>[
-            new ListTile(
-                title: new Text("Hello"),
-                leading: Text(index.toString()),
-                trailing: Checkbox(
-                  onChanged: (bool value) {
-                    a = (a = false ? true : false);
-                  },
-                  value: true,
-                )),
-            new Divider(
-              height: 2.0,
-            ),
-          ],
-        );
-      },
+          BottomNavigationBarItem(
+            icon: new Icon(Icons.done_all),
+            title: new Text('Completed'),
+          ),
+        ],
+      ),
     );
   }
 
-  // Future<List<Todo>> _getData() async {
-  //   print("getData");
-  //   return null;
-  // }
-}
+  void onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
-    Future<List<String>>  _getData() async{
-      var values = new List<String>();
-      values.add("Hello");
-      values.add("A");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      values.add("NNNello");
-      await new Future.delayed(new Duration(seconds: 2));
-      return values;
+  Widget createListView(BuildContext context, AsyncSnapshot snapshot) {
+    list_undone = [];
+    list_done = [];
+    lenall = snapshot.data.length;
+    for (var items in snapshot.data) {
+      if (items.done == false) {
+        list_undone.add(items);
+      } else {
+        list_done.add(items);
+      }
+    }
+    if (_currentIndex == 0 && list_undone.length > 0) {
+      return new ListView.builder(
+        itemCount: list_undone.length,
+        itemBuilder: (BuildContext context, int index) {
+          return new Column(
+            children: <Widget>[
+              new ListTile(
+                  title: new Text(list_undone[index].title),
+                  leading: Text((index + 1).toString()),
+                  trailing: Checkbox(
+                    onChanged: (bool value) async {
+                      setState(() {
+                        list_undone[index].done = value;
+                      });
+                      todo.update(list_undone[index]);
+                    },
+                    value: list_undone[index].done,
+                  )),
+              new Divider(
+                height: 2.0,
+              ),
+            ],
+          );
+        },
+      );
+    } else if (_currentIndex == 1 && list_done.length > 0) {
+      return new ListView.builder(
+        itemCount: list_done.length,
+        itemBuilder: (BuildContext context, int index) {
+          return new Column(
+            children: <Widget>[
+              new ListTile(
+                  title: new Text(list_done[index].title),
+                  leading: Text((index + 1).toString()),
+                  trailing: Checkbox(
+                    onChanged: (bool value) async {
+                      setState(() {
+                        list_done[index].done = value;
+                      });
+                      todo.update(list_done[index]);
+                    },
+                    value: list_done[index].done,
+                  )),
+              new Divider(
+                height: 2.0,
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      return new Center(
+        child: Text("No data found.."),
+      );
+    }
+  }
 }
