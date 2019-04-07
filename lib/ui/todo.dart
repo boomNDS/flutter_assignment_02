@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 final String tableTodo = "todo";
-final String columnId = "_id";
+final String columnId = "id";
 final String columnTitle = "title";
 final String columnDone = "done";
 
